@@ -994,6 +994,7 @@ if ( ! class_exists( 'connectionsLoad' ) ) {
 
 			/** @var $connections connectionsLoad */
 			global $connections;
+			global $wp_rewrite;
 
 			require_once CN_PATH . 'includes/class.schema.php';
 
@@ -1022,6 +1023,9 @@ if ( ! class_exists( 'connectionsLoad' ) ) {
 			add_filter( 'page_rewrite_rules', array( 'cnRewrite', 'addPageRewriteRules' ) );
 
 			// Flush so they are rebuilt.
+			if ( $wp_rewrite == null ) { // null protect for testing
+				$wp_rewrite = new wp_rewrite;
+			}
 			flush_rewrite_rules();
 		}
 

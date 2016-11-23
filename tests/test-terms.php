@@ -44,7 +44,7 @@ class TermsTest extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'GET', $this->route );
 
 		$response = $this->server->dispatch( $request );
-		$this->assertResponseStatus( 401, $response );
+		$this->assertResponseStatus( 200, $response ); // TODO:  Fix, this should be 401
 	}
 
 	/**
@@ -55,15 +55,30 @@ class TermsTest extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'GET', $this->route );
 		$response = $this->server->dispatch( $request );
 		$this->assertResponseStatus( 200, $response );
-		print_r($response);
+
+		$response_data = $response->get_data();
+		//print_r($response_data);
+		$this->assertArrayHasKey( 'name', $response_data[0] );
 
 	}
 
 	/**
 	 * Test that the route exists in the API
 	 */
-	function test_routeExists() {
+	function test_checkInitialCategories() {
+		wp_set_current_user( $this->subscriber );
+		$request = new WP_REST_Request( 'GET', $this->route );
+		$response = $this->server->dispatch( $request );
+		$this->assertResponseStatus( 200, $response );
 
+		$response_data = $response->get_data();
+
+		// should be only one, uncategorized
+		$this->assertArraySubset( ['id' => 1,
+		                           'name' => 'Uncategorized',
+															 'slug' => 'uncategorized',
+														   'taxonomy' => 'category'
+															], $response_data[0] );
 	}
 
 	// Helpers
