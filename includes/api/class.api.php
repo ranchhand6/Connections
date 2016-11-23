@@ -83,7 +83,7 @@ class cnAPI {
 	public function registerRoutes() {
 
 		$controllers = array(
-			//'CN_REST_Entry_Controller',
+			'CN_REST_Entry_Controller',
 			//'CN_REST_Entry_JSONLD_Controller',
 			//'CN_REST_Entry_GeoJSON_Controller',
 			'CN_REST_Terms_Controller',

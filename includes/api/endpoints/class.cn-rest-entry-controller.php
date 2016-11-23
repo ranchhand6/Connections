@@ -5,7 +5,7 @@
  * @author   Steven A. Zahm
  * @category API
  * @package  Connections/API
- * @since    8.5.26
+ * @since    8.5.26 
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
