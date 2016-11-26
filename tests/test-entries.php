@@ -86,11 +86,14 @@ class EntryTest extends WP_UnitTestCase {
 
 		$response_data = $response->get_data();
 
-		// should be only one, uncategorized
-		$this->assertArraySubset( ['name' => ['raw' => 'Tom Forest Hanks', 'rendered' => 'Tom Forest Hanks'],
+		// see if our test entry is present
+		$this->assertArraySubset( ['name' => ['raw' => 'Mr. Tom Forest Hanks OBE',
+                               'rendered' => 'Mr. Tom Forest Hanks OBE'],
 															 'given_name' => ['raw' => 'Tom'],
 														   'additional_name' => ['raw' => 'Forest'],
-															 'family_name' => ['raw' => 'Hanks']
+															 'family_name' => ['raw' => 'Hanks'],
+                               'honorific_suffix' => ['raw' => 'OBE'],
+                               'job_title' => ['raw' => 'actor'],
 															], $response_data[0] );
 	}
 
@@ -116,9 +119,40 @@ class EntryTest extends WP_UnitTestCase {
 	protected function createTestEntry() {
 		$entry = ['entry_type' => 'individual',
 							'visibility' => 'public',
+              'honorific_prefix' => 'Mr.',
 						  'first_name' => 'Tom',
 							'middle_name' => 'Forest',
-							'last_name' => 'Hanks'];
+							'last_name' => 'Hanks',
+              'honorific_suffix' => 'OBE',
+              'title' => 'actor',
+              'address' => [[
+                  'line_1' => '111 Vine',
+                  'line_2' => '222 Vine',
+                  'line_3' => '333 Vine',
+                  'line_4' => '444 Vine',
+                  'city'   => 'Hollywood',
+									'county' => 'Los Angeles',
+                  'state'  => 'California',
+                  'zipcode' => '90028,',
+									'country' => "United States"
+                  ]],
+							'phone' => [[
+									'type' => 'home',
+									'number' => '5554443333',
+									'preferred' => '1'
+								],
+								[
+										'type' => 'cell',
+										'number' => '6664443333',
+										'preferred' => '0'
+								],
+								[
+										'type' => 'work',
+										'number' => '7774443333',
+										'preferred' => '0'
+								],
+							]
+        ];
 		$entryId = cnEntry_Action::add( $entry );
 		return $entryId;
 	}

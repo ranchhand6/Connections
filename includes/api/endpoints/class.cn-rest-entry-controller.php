@@ -5,7 +5,7 @@
  * @author   Steven A. Zahm
  * @category API
  * @package  Connections/API
- * @since    8.5.26 
+ * @since    8.5.26
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -255,6 +255,7 @@ class CN_REST_Entry_Controller extends WP_REST_Controller {
 		);
 
 		$data = $this->prepare_address_for_response( $entry, $request, $data );
+		$data = $this->prepare_phone_for_response( $entry, $request, $data );
 
 		// Wrap the data in a response object.
 		$response = rest_ensure_response( $data );
@@ -273,63 +274,116 @@ class CN_REST_Entry_Controller extends WP_REST_Controller {
 	 */
 	private function prepare_address_for_response( $entry, $request, $data ) {
 
-		$data['adr'] = array();
-		$display     = $entry->getAddresses();
-		$raw         = $entry->getAddresses( array(), TRUE, FALSE, 'raw' );
+		$data['addresses'] = array();
+		$rendered_addresses = $entry->getAddresses();
+		$raw_addresses      = $entry->getAddresses( array(), TRUE, FALSE, 'raw' );
 
-		if ( empty( $addresses ) ) return $data;
+		if ( empty( $rendered_addresses ) ) return $data;
+		if ( count( $rendered_addresses ) != count( $raw_addresses ) ) {
+			// error, log and bail
+			return $data;
+		}
 
-		foreach ( $addresses as $address ) {
+		//foreach ( $rendered_addresses as $address ) {
+		for ($i = 0; $i < count($rendered_addresses); ++$i) {
 
 			$item = array(
+				'preferred'   => array(
+					'raw'      => $raw_addresses[$i]->preferred,
+					'rendered' => $rendered_addresses[$i]->preferred,
+				),
 				'street_address'   => array(
-					'raw'      => '',
-					'rendered' => '',
+					'raw'      => $raw_addresses[$i]->line_1,
+					'rendered' => $rendered_addresses[$i]->line_1,
 				),
 				'extended_address' => array(
-					'raw'      => '',
-					'rendered' => '',
+					'raw'      => $raw_addresses[$i]->line_2,
+					'rendered' => $rendered_addresses[$i]->line_2,
 				),
 				'street_address_3' => array(
-					'raw'      => '',
-					'rendered' => '',
+					'raw'      => $raw_addresses[$i]->line_3,
+					'rendered' => $rendered_addresses[$i]->line_3,
 				),
 				'street_address_4' => array(
-					'raw'      => '',
-					'rendered' => '',
+					'raw'      => $raw_addresses[$i]->line_4,
+					'rendered' => $rendered_addresses[$i]->line_4,
 				),
 				'locality'         => array(
-					'raw'      => '',
-					'rendered' => '',
+					'raw'      => $raw_addresses[$i]->city,
+					'rendered' => $rendered_addresses[$i]->city,
 				),
-				'region'           => array(
-					'raw'      => '',
-					'rendered' => '',
+				'city'       => array(
+					'raw'      => $raw_addresses[$i]->city,
+					'rendered' => $rendered_addresses[$i]->city,
 				),
-				'district'         => array(
-					'raw'      => '',
-					'rendered' => '',
+				'region'     => array(
+					'raw'      => $raw_addresses[$i]->state,
+					'rendered' => $rendered_addresses[$i]->state,
+				),
+				'state'      => array(
+					'raw'      => $raw_addresses[$i]->state,
+					'rendered' => $rendered_addresses[$i]->state,
+				),
+				'district'   => array(
+					'raw'      => $raw_addresses[$i]->county,
+					'rendered' => $rendered_addresses[$i]->county,
 				),
 				'county'           => array(
-					'raw'      => '',
-					'rendered' => '',
+					'raw'      => $raw_addresses[$i]->county,
+					'rendered' => $rendered_addresses[$i]->county,
 				),
 				'postal_code'      => array(
-					'raw'      => '',
-					'rendered' => '',
+					'raw'      => $raw_addresses[$i]->zipcode,
+					'rendered' => $rendered_addresses[$i]->zipcode,
 				),
 				'country_name'     => array(
-					'raw'      => '',
-					'rendered' => '',
+					'raw'      => $raw_addresses[$i]->country,
+					'rendered' => $rendered_addresses[$i]->country,
+				),
+				'order'     => array(
+					'raw'      => $raw_addresses[$i]->order,
+					'rendered' => $rendered_addresses[$i]->order,
 				),
 			);
 
-			$data['adr'] = $item;
+			$data['addresses'][] = $item;
 		}
 
 		return $data;
 	}
 
+	/**
+	 * Prepare a single phone output for response.
+	 *
+	 * @param cnEntry         $entry   Post object.
+	 * @param WP_REST_Request $request Request object.
+	 * @param array           $data
+	 *
+	 * @return array $data
+	 */
+	private function prepare_phone_for_response( $entry, $request, $data ) {
+		$data['phone_numbers'] = array();
+
+		$phone_numbers = $entry->getPhoneNumbers();
+
+		if ( empty( $phone_numbers ) ) return $data;
+
+		foreach ( $phone_numbers as $phone_number )  {
+
+			$item = array(
+				'id'        => $phone_number->id,
+				'order'     => $phone_number->order,
+				'preferred' => $phone_number->preferred,
+				'type'		  => $phone_number->type,
+				'number'    => $phone_number->number,
+				'name'      => $phone_number->name,
+			);
+
+			$data['phone_numbers'][] = $item;
+		}
+
+		return $data;
+	}
 	/**
 	 * Get the entry's schema, conforming to JSON Schema.
 	 *
