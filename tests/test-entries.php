@@ -94,6 +94,68 @@ class EntryTest extends WP_UnitTestCase {
 															 'family_name' => ['raw' => 'Hanks'],
                                'honorific_suffix' => ['raw' => 'OBE'],
                                'job_title' => ['raw' => 'actor'],
+															 'addresses' => [ 0 =>
+															 		['preferred' => ['raw' => '1'],
+																	 'street_address'   => ['raw' => '111 Vine'],
+																	 'extended_address' => ['raw' => '222 Vine'],
+																	 'street_address_3' => ['raw' => '333 Vine'],
+																	 'street_address_4' => ['raw' => '444 Vine'],
+																	 'locality'         => ['raw' => 'Hollywood'],
+																	 'city'             => ['raw' => 'Hollywood'],
+																	 'region'           => ['raw' => 'California'],
+																	 'state'            => ['raw' => 'California'],
+																	 'district'         => ['raw' => 'Los Angeles'],
+																	 'county'           => ['raw' => 'Los Angeles'],
+																	 'postal_code'      => ['raw' => '90028'],
+																	 'country_name'     => ['raw' => 'United States'],
+																  ]
+																],
+																'phone_numbers' => [
+																	0 =>
+																	['id'        => '0',
+																	 'order'     => '0',
+																	 'preferred' => '1',
+																	 'type'      => 'homephone',
+																	 'number'    => '5554443333',
+																	 'name'      => 'Home Phone'
+																 	],
+																  1 =>
+																	 ['id'        => '0',
+																		'order'     => '1',
+																		'preferred' => '',
+																		'type'      => 'cellphone',
+																		'number'    => '6664443333',
+																		'name'      => 'Cell Phone'
+																	],
+																	2 =>
+																	 ['id'        => '0',
+																		'order'     => '2',
+																		'preferred' => '',
+																		'type'      => 'workphone',
+																		'number'    => '7774443333',
+																		'name'      => 'Work Phone'
+																	]
+																],
+																'email_addresses' => [
+																	0 =>
+																	['id'        => '0',
+																	 'order'     => '0',
+																	 'preferred' => '1',
+																	 'type'      => 'personal',
+																	 'address'    => 'home@gmail.com'
+																	],
+																	1 =>
+																	 ['id'        => '0',
+																		'order'     => '1',
+																		'preferred' => '',
+																		'type'      => 'work',
+																		'address'    => 'work@gmail.com'
+																	]
+																],
+																'photo' => [
+																	0 =>
+																	 	['url' => 'http://example.org/wp-content/uploads/connections-images/tom-hanks/']
+																]
 															], $response_data[0] );
 	}
 
@@ -133,7 +195,7 @@ class EntryTest extends WP_UnitTestCase {
                   'city'   => 'Hollywood',
 									'county' => 'Los Angeles',
                   'state'  => 'California',
-                  'zipcode' => '90028,',
+                  'zipcode' => '90028',
 									'country' => "United States"
                   ]],
 							'phone' => [[
@@ -151,7 +213,18 @@ class EntryTest extends WP_UnitTestCase {
 										'number' => '7774443333',
 										'preferred' => '0'
 								],
-							]
+							],
+							'email' => [[
+									'type' => 'personal',
+									'address' => 'home@gmail.com',
+									'preferred' => '1'
+								],
+								[
+									'type' => 'work',
+									'address' => 'work@gmail.com',
+									'preferred' => '0'
+								],
+							],
         ];
 		$entryId = cnEntry_Action::add( $entry );
 		return $entryId;

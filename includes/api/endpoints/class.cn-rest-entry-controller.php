@@ -256,6 +256,8 @@ class CN_REST_Entry_Controller extends WP_REST_Controller {
 
 		$data = $this->prepare_address_for_response( $entry, $request, $data );
 		$data = $this->prepare_phone_for_response( $entry, $request, $data );
+		$data = $this->prepare_emails_for_response( $entry, $request, $data );
+		$data = $this->prepare_photo_for_response( $entry, $request, $data );
 
 		// Wrap the data in a response object.
 		$response = rest_ensure_response( $data );
@@ -384,6 +386,64 @@ class CN_REST_Entry_Controller extends WP_REST_Controller {
 
 		return $data;
 	}
+
+	/**
+	 * Prepare email addresses output for response.
+	 *
+	 * @param cnEntry         $entry   Post object.
+	 * @param WP_REST_Request $request Request object.
+	 * @param array           $data
+	 *
+	 * @return array $data
+	 */
+	private function prepare_emails_for_response( $entry, $request, $data ) {
+		$data['email_addresses'] = array();
+
+		$email_addresses = $entry->getEmailAddresses();
+
+		if ( empty( $email_addresses ) ) return $data;
+
+		foreach ( $email_addresses as $email_address )  {
+
+			$item = array(
+				'id'        => $email_address->id,
+				'order'     => $email_address->order,
+				'preferred' => $email_address->preferred,
+				'type'		  => $email_address->type,
+				'address'   => $email_address->address,
+			);
+
+			$data['email_addresses'][] = $item;
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Prepare entry photo output for response.
+	 *
+	 * @param cnEntry         $entry   Post object.
+	 * @param WP_REST_Request $request Request object.
+	 * @param array           $data
+	 *
+	 * @return array $data
+	 */
+	private function prepare_photo_for_response( $entry, $request, $data ) {
+		$data['photo'] = array();
+
+		$photos = $entry->getOriginalImageURL('photo');
+
+		if ( empty( $photos ) ) return $data;
+
+		$item = array(
+			'url'        => $photos,
+		);
+
+		$data['photo'][] = $item;
+
+		return $data;
+	}
+
 	/**
 	 * Get the entry's schema, conforming to JSON Schema.
 	 *
