@@ -431,13 +431,22 @@ class CN_REST_Entry_Controller extends WP_REST_Controller {
 	private function prepare_photo_for_response( $entry, $request, $data ) {
 		$data['photo'] = array();
 
-		$photos = $entry->getOriginalImageURL('photo');
+		$photo_url = $entry->getOriginalImageURL('photo');
+		$photo_meta = $entry->getImageMeta(); // default original size
 
-		if ( empty( $photos ) ) return $data;
-
-		$item = array(
-			'url'        => $photos,
-		);
+		if ( empty( $photo_url ) ) return $data;
+		if ( empty( $photo_meta ) ) return $data;
+		if ( $photo_meta instanceof WP_Error ) {
+			$item = array (
+				'errors' => $photo_meta->errors
+			);
+		} else {
+			$item = array(
+				'name'       => $photo_meta['name'],
+				'url'        => $photo_meta['url'],
+				'path'       => $photo_meta['path']
+			);
+		}
 
 		$data['photo'][] = $item;
 

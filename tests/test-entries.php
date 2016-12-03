@@ -70,15 +70,15 @@ class EntryTest extends WP_UnitTestCase {
 		$this->assertResponseStatus( 200, $response );
 
 		$response_data = $response->get_data();
-		print_r($response_data);
-		$this->assertArrayHasKey( 'name', $response_data[0] );
 
+		$this->assertArrayHasKey( 'name', $response_data[0] );
 	}
 
 	/**
-	 * Test that the route exists in the API
+	 * Test that the route exists in the API and that adding
+	 * an entry results in data being returned in the API
 	 */
-	function test_checkInitialCategories() {
+	function test_checkInitialEntry() {
 		wp_set_current_user( $this->subscriber );
 		$request = new WP_REST_Request( 'GET', $this->route );
 		$response = $this->server->dispatch( $request );
@@ -152,11 +152,76 @@ class EntryTest extends WP_UnitTestCase {
 																		'address'    => 'work@gmail.com'
 																	]
 																],
-																'photo' => [
-																	0 =>
-																	 	['url' => 'http://example.org/wp-content/uploads/connections-images/tom-hanks/']
-																]
+																'photo' =>
+																	[0 =>
+																		['errors' =>
+																			['image_not_found' =>
+																				[0 => 'The file  is not an image.']
+																]]]
 															], $response_data[0] );
+	}
+
+	/**
+	* Tests the photo return portion of the API
+	*/
+	function test_attach_photo_to_entry() {
+		wp_set_current_user( $this->subscriber );
+		$request = new WP_REST_Request( 'GET', $this->route );
+		$response = $this->server->dispatch( $request );
+		$this->assertResponseStatus( 200, $response );
+
+		$response_data = $response->get_data();
+
+		// see if our test entry is present
+		$this->assertArraySubset(
+			[
+				'photo' =>
+					[0 =>
+						['errors' =>
+							['image_not_found' =>
+								[0 => 'The file  is not an image.']
+				]]]
+			], $response_data[0] );
+
+		$id = $response_data[0]['id'];
+		$entry_slug = $response_data[0]['slug'];
+		print_r($response_data[0]);
+		print_r($entry_slug);
+
+		wp_set_current_user( $this->administrator );
+
+		$filename = ( './tests/images/GB.jpg' );
+		$contents = file_get_contents($filename);
+		$size = filesize($filename);
+
+		$upload = wp_upload_bits(basename($filename), null, $contents);
+		$this->assertTrue( empty($upload['error']) );
+
+		print_r($upload);
+		// Fool class.entry-actions into processing the image
+		$_FILES = array(
+			'original_image'    =>  array(
+				'name'      =>  'GB.jpg',
+				'tmp_name'  =>  $upload['file'],
+				'type'      =>  $upload['type'],
+				'size'      =>  $size,
+				'error'     =>  0
+			)
+		);
+		print_r($_FILES);
+		global $_FILES;
+
+		// update to post new image data, should pick up image from $_FILES
+		echo "Beginning file update\r\n";
+		$entryId = cnEntry_Action::update($id, ['slug' => $entry_slug, 'imgOptions' => 'show'] );
+		echo "After file update\r\n";
+
+		$request = new WP_REST_Request( 'GET', $this->route );
+		$response = $this->server->dispatch( $request );
+		$this->assertResponseStatus( 200, $response );
+
+		$response_data = $response->get_data();
+		print_r($response_data);
 	}
 
 	// Helpers
@@ -229,5 +294,4 @@ class EntryTest extends WP_UnitTestCase {
 		$entryId = cnEntry_Action::add( $entry );
 		return $entryId;
 	}
-
 }

@@ -633,12 +633,14 @@ class cnEntry_Action {
 
 			// Delete the entry image and its variations.
 			self::deleteImages( $entry->getImageNameOriginal(), $slug );
+			echo "got to update image for " . $slug;
 
 			// Delete any legacy images, pre 8.1, that may exist.
 			self::deleteLegacyImages( $entry );
 
 			// Process the newly uploaded image.
 			$result = self::processImage( $slug );
+			print_r($result);
 
 			// If there were no errors processing the image, set the values.
 			if ( $result ) {
