@@ -213,7 +213,10 @@ class EntryTest extends WP_UnitTestCase {
 
 		// update to post new image data, should pick up image from $_FILES
 		echo "Beginning file update\r\n";
-		$entryId = cnEntry_Action::update($id, ['slug' => $entry_slug, 'imgOptions' => 'show'] );
+		$entry = $this->getFirstTestEntry();
+		$merged_args = array_merge( ['slug' => $entry_slug, 'imgOptions' => 'show'], $entry );
+
+		$entryId = cnEntry_Action::update($id, $merged_args);
 		echo "After file update\r\n";
 
 		$request = new WP_REST_Request( 'GET', $this->route );
@@ -221,7 +224,6 @@ class EntryTest extends WP_UnitTestCase {
 		$this->assertResponseStatus( 200, $response );
 
 		$response_data = $response->get_data();
-		print_r($response_data);
 	}
 
 	// Helpers
@@ -243,26 +245,29 @@ class EntryTest extends WP_UnitTestCase {
 		$this->assertEquals( $data, $tested_data );
 	}
 
-	protected function createTestEntry() {
+	/**
+	* Create an array containing a properly constructed test entry
+	*/
+  protected function getFirstTestEntry() {
 		$entry = ['entry_type' => 'individual',
 							'visibility' => 'public',
-              'honorific_prefix' => 'Mr.',
-						  'first_name' => 'Tom',
+							'honorific_prefix' => 'Mr.',
+							'first_name' => 'Tom',
 							'middle_name' => 'Forest',
 							'last_name' => 'Hanks',
-              'honorific_suffix' => 'OBE',
-              'title' => 'actor',
-              'address' => [[
-                  'line_1' => '111 Vine',
-                  'line_2' => '222 Vine',
-                  'line_3' => '333 Vine',
-                  'line_4' => '444 Vine',
-                  'city'   => 'Hollywood',
+							'honorific_suffix' => 'OBE',
+							'title' => 'actor',
+							'address' => [[
+									'line_1' => '111 Vine',
+									'line_2' => '222 Vine',
+									'line_3' => '333 Vine',
+									'line_4' => '444 Vine',
+									'city'   => 'Hollywood',
 									'county' => 'Los Angeles',
-                  'state'  => 'California',
-                  'zipcode' => '90028',
+									'state'  => 'California',
+									'zipcode' => '90028',
 									'country' => "United States"
-                  ]],
+									]],
 							'phone' => [[
 									'type' => 'home',
 									'number' => '5554443333',
@@ -290,7 +295,12 @@ class EntryTest extends WP_UnitTestCase {
 									'preferred' => '0'
 								],
 							],
-        ];
+				];
+		return $entry;
+	}
+
+	protected function createTestEntry() {
+		$entry = $this->getFirstTestEntry();
 		$entryId = cnEntry_Action::add( $entry );
 		return $entryId;
 	}
