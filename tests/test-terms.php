@@ -74,11 +74,12 @@ class TermsTest extends WP_UnitTestCase {
 		$response_data = $response->get_data();
 
 		// should be only one, uncategorized
-		$this->assertArraySubset( ['id' => 1,
-		                           'name' => 'Uncategorized',
-															 'slug' => 'uncategorized',
-														   'taxonomy' => 'category'
-															], $response_data[0] );
+		$this->assertArraySubset(
+			['id' => 1,
+       'name' => 'Uncategorized',
+			 'slug' => 'uncategorized',
+		   'taxonomy' => 'category'
+			], $response_data[0] );
 	}
 
 	// Helpers

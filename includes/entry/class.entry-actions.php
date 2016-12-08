@@ -640,7 +640,6 @@ class cnEntry_Action {
 
 			// Process the newly uploaded image.
 			$result = self::processImage( $slug );
-			print_r($result);
 
 			// If there were no errors processing the image, set the values.
 			if ( $result ) {

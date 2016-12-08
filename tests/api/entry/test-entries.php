@@ -190,50 +190,42 @@ class EntryTest extends WP_UnitTestCase {
 		$id = $response_data[0]['id'];
 		$entry_slug = $response_data[0]['slug'];
 
-		print_r($entry_slug . "\r\n");
+		$filename = 'GB.jpg';
+		$testFilePath = "./tests/images/$filename";
+		$contents = file_get_contents($testFilePath);
+		$size = filesize($testFilePath);
 
-		$filename = ( './tests/images/GB.jpg' );
-		$contents = file_get_contents($filename);
-		$size = filesize($filename);
-
-		$upload = wp_upload_bits(basename($filename), null, $contents);
+		$upload = wp_upload_bits(basename($testFilePath), null, $contents);
 		$this->assertTrue( empty($upload['error']) );
 
-		print_r($upload);
 		// Fool class.entry-actions into processing the image
 		$_FILES = array(
 			'original_image'    =>  array(
-				'name'      =>  'GB.jpg',
+				'name'      =>  $filename,
 				'tmp_name'  =>  $upload['file'],
 				'type'      =>  $upload['type'],
 				'size'      =>  $size,
 				'error'     =>  0
 			)
 		);
-		print_r($_FILES);
 		global $_FILES;
 
-		// update to post new image data, should pick up image from $_FILES
-		// echo "Beginning file update on id " . $id . "\r\n";
-		// $entryData = $this->getFirstTestEntry();
-		// $merged_args = array_merge( ['slug' => $entry_slug, 'imgOptions' => 'show'], $entryData );
-
-		//wp_set_current_user( $this->administrator );
+		// photo is added to entry identified by entryId1
+		// because it exists in the $_FILES structure
 		$entryId = cnEntry_Action::update( $entryId1, [] );
-		// echo "directory_instance after Action::Update => \r\n";
-		// $working_entries = $directory_instance->retrieve->entry( $id );
-		// $directory_instance = Connections_Directory();
-		//print_r($directory_instance);
+
+		// Get the single entry in order to see if it has the photo attached
 		$single_entry_route = $this->route . "/$entryId1";
-		echo "SingleEntryRoute => $single_entry_route \r\n";
-		
 		$request = new WP_REST_Request( 'GET', $this->route . "/$entryId1" );
 		$response = $this->server->dispatch( $request );
 		$this->assertResponseStatus( 200, $response );
 
 		$response_data = $response->get_data();
-		echo "ResponseData\r\n";
-		print_r( $response_data );
+
+		// see if our test entry is present
+		$this->assertContains($filename, $response_data[0]['photo'][0]['original']['name']);
+		$this->assertContains($filename, $response_data[0]['photo'][0]['original']['url']);
+		$this->assertContains($filename, $response_data[0]['photo'][0]['original']['path']);
 
 		cnEntry_Action::delete( $entryId1 );
 	}
