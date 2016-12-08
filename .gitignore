@@ -62,3 +62,18 @@ build
 logs
 docs
 nbproject
+
+# Composer #
+############
+composer.lock
+/vendor/symfony
+/vendor/doctrine
+/vendor/sebastian
+/vendor/webmozart
+/vendor/phpdocumentor
+/vendor/phpspec
+/vendor/myclabs
+/vendor/phpunit
+/vendor/bin
+/vendor/composer
+/vendor/autoload.php

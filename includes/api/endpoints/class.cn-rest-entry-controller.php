@@ -296,6 +296,19 @@ class CN_REST_Entry_Controller extends WP_REST_Controller {
 		$data = $this->prepare_emails_for_response( $entry, $request, $data );
 		$data = $this->prepare_photo_for_response( $entry, $request, $data );
 
+		$data['bio'] = array(
+			'raw'      => $entry->getBio( 'raw' ),
+			'rendered' => $entry->getBio(),
+		);
+
+		$data['notes'] = array(
+			'raw'      => $entry->getNotes( 'raw' ),
+			'rendered' => $entry->getNotes(),
+		);
+
+		$data['visibility'] = $entry->getVisibility();
+		$data['status']     = $entry->getStatus();
+
 		// Wrap the data in a response object.
 		$response = rest_ensure_response( $data );
 
