@@ -26,4 +26,23 @@ class cnTests_Install extends WP_UnitTestCase {
 		}
 
 	}
+
+	public function test_category_exists_alternate() {
+
+		$term = cnTerm::getBy( 'name', 'Uncategorized', 'category' );
+
+		$this->assertFalse( is_wp_error( $term ) , 'WP Error occurred. Uncategorized category not found.');
+
+		$this->assertEquals(
+			array(
+				'name' => 'Uncategorized',
+				'slug' => 'uncategorized',
+			),
+			array(
+				'name' => $term->name,
+				'slug' => $term->slug,
+			),
+			'Uncategorized category not found.'
+		);
+	}
 }
