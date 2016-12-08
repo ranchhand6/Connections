@@ -166,6 +166,10 @@ class EntryTest extends WP_UnitTestCase {
 	*/
 	function test_attach_photo_to_entry() {
 		wp_set_current_user( $this->subscriber );
+
+		// put an entry in the database
+		$entryId1 = $this->createTestEntry();
+
 		$request = new WP_REST_Request( 'GET', $this->route );
 		$response = $this->server->dispatch( $request );
 		$this->assertResponseStatus( 200, $response );
@@ -185,10 +189,8 @@ class EntryTest extends WP_UnitTestCase {
 
 		$id = $response_data[0]['id'];
 		$entry_slug = $response_data[0]['slug'];
-		print_r($response_data[0]);
-		print_r($entry_slug);
 
-		wp_set_current_user( $this->administrator );
+		print_r($entry_slug . "\r\n");
 
 		$filename = ( './tests/images/GB.jpg' );
 		$contents = file_get_contents($filename);
@@ -212,18 +214,28 @@ class EntryTest extends WP_UnitTestCase {
 		global $_FILES;
 
 		// update to post new image data, should pick up image from $_FILES
-		echo "Beginning file update\r\n";
-		$entry = $this->getFirstTestEntry();
-		$merged_args = array_merge( ['slug' => $entry_slug, 'imgOptions' => 'show'], $entry );
+		// echo "Beginning file update on id " . $id . "\r\n";
+		// $entryData = $this->getFirstTestEntry();
+		// $merged_args = array_merge( ['slug' => $entry_slug, 'imgOptions' => 'show'], $entryData );
 
-		$entryId = cnEntry_Action::update($id, $merged_args);
-		echo "After file update\r\n";
-
-		$request = new WP_REST_Request( 'GET', $this->route );
+		//wp_set_current_user( $this->administrator );
+		$entryId = cnEntry_Action::update( $entryId1, [] );
+		// echo "directory_instance after Action::Update => \r\n";
+		// $working_entries = $directory_instance->retrieve->entry( $id );
+		// $directory_instance = Connections_Directory();
+		//print_r($directory_instance);
+		$single_entry_route = $this->route . "/$entryId1";
+		echo "SingleEntryRoute => $single_entry_route \r\n";
+		
+		$request = new WP_REST_Request( 'GET', $this->route . "/$entryId1" );
 		$response = $this->server->dispatch( $request );
 		$this->assertResponseStatus( 200, $response );
 
 		$response_data = $response->get_data();
+		echo "ResponseData\r\n";
+		print_r( $response_data );
+
+		cnEntry_Action::delete( $entryId1 );
 	}
 
 	// Helpers

@@ -78,7 +78,7 @@ class CN_REST_Entry_Controller extends WP_REST_Controller {
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_item' ),
-					'permission_callback' => array( $this, 'get_item_permissions_check' ),
+					'permission_callback' => array( $this, 'get_items_permissions_check' ),
 					'args'                => array(
 						'context' => $this->get_context_param( array( 'default' => 'view' ) ),
 					),
@@ -149,6 +149,43 @@ class CN_REST_Entry_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * @param WP_REST_Request $request Full details about the request.
+	 *
+	 * @return array
+	 */
+	protected function get_entry( $request ) {
+
+		// Grab an instance of the Connections object.
+		$instance = Connections_Directory();
+
+		$results = $instance->retrieve->entry( $request['id'] );
+
+		return $results;
+	}
+
+	/**
+	 * Get a collection of posts.
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 *
+	 * @return WP_Error|WP_REST_Response
+	 */
+	public function get_item( $request ) {
+
+		$result = $this->get_entry( $request );
+
+		$entries = array();
+
+		$entry = new cnEntry( $result );
+
+		$data = $this->prepare_item_for_response( $entry, $request );
+		$entries[] = $this->prepare_response_for_collection( $data );
+
+		$response = rest_ensure_response( $entries );
+
+		return $response;
+	}
+		/**
 	 * Get a collection of posts.
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
@@ -431,8 +468,12 @@ class CN_REST_Entry_Controller extends WP_REST_Controller {
 	private function prepare_photo_for_response( $entry, $request, $data ) {
 		$data['photo'] = array();
 
-		$photo_url = $entry->getOriginalImageURL('photo');
+		$photo_url  = $entry->getOriginalImageURL('photo');
 		$photo_meta = $entry->getImageMeta(); // default original size
+		// 		$sizes    = array( 'thumbnail', 'medium', 'large' );
+		// $photo_thumb  = $entry->getImageMeta( ['type' => 'photo','size' => 'thumbnail'] );
+		// $photo_medium = $entry->getImageMeta( ['type' => 'photo','size' => 'medium'] );
+		// $photo_large  = $entry->getImageMeta( ['type' => 'photo','size' => 'large'] );
 
 		if ( empty( $photo_url ) ) return $data;
 		if ( empty( $photo_meta ) ) return $data;
@@ -441,11 +482,28 @@ class CN_REST_Entry_Controller extends WP_REST_Controller {
 				'errors' => $photo_meta->errors
 			);
 		} else {
-			$item = array(
-				'name'       => $photo_meta['name'],
-				'url'        => $photo_meta['url'],
-				'path'       => $photo_meta['path']
-			);
+			$item =
+				['original' => [
+					'name'       => $photo_meta['name'],
+					'url'        => $photo_meta['url'],
+					'path'       => $photo_meta['path']
+				],
+				// 'thumbnail' => [
+				// 	'name'       => $photo_thumb['name'],
+				// 	'url'        => $photo_thumb['url'],
+				// 	'path'       => $photo_thumb['path']
+				// ],
+				// 'medium' => [
+				// 	'name'       => $photo_medium['name'],
+				// 	'url'        => $photo_medium['url'],
+				// 	'path'       => $photo_medium['path']
+				// ],
+				// 'large' => [
+				// 	'name'       => $photo_large['name'],
+				// 	'url'        => $photo_large['url'],
+				// 	'path'       => $photo_large['path']
+				// ]
+			];
 		}
 
 		$data['photo'][] = $item;

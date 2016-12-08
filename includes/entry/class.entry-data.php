@@ -4994,11 +4994,6 @@ class cnEntry {
 				'%d'
 			)
 		);
-    
-    echo "Main update\r\n";
-    print_r($result);
-    echo "Before sub-updates ". ((FALSE !== $result) ? "true": "false" ). " \r\n";
-		//print_r($wpdb->last_query);
 
 		/*
 		 * Only update the rest of the entry's data if the update to the ENTRY TABLE was successful.
@@ -5033,8 +5028,6 @@ class cnEntry {
 					'id' => array( 'key' => 'id', 'format' => '%d' )
 				)
 			);
-      
-      echo "Address update\r\n";
 
 			$cnDb->upsert(
 				CN_ENTRY_PHONE_TABLE,
@@ -5050,8 +5043,6 @@ class cnEntry {
 					'id' => array( 'key' => 'id', 'format' => '%d' )
 				)
 			);
-      
-      echo "Phone update\r\n";
 
 			$cnDb->upsert(
 				CN_ENTRY_EMAIL_TABLE,
@@ -5068,7 +5059,6 @@ class cnEntry {
 				)
 			);
 
-      echo "Phone update\r\n";
 			$cnDb->upsert(
 				CN_ENTRY_MESSENGER_TABLE,
 				array(
@@ -5084,7 +5074,6 @@ class cnEntry {
 				)
 			);
 
-      echo "Messenger update\r\n";
 			$cnDb->upsert(
 				CN_ENTRY_SOCIAL_TABLE,
 				array(
@@ -5099,8 +5088,7 @@ class cnEntry {
 					'id' => array( 'key' => 'id', 'format' => '%d' )
 				)
 			);
-      
-      echo "Social update\r\n";
+
 			$cnDb->upsert(
 				CN_ENTRY_LINK_TABLE,
 				array(
@@ -5120,7 +5108,6 @@ class cnEntry {
 					'id' => array( 'key' => 'id', 'format' => '%d' )
 				)
 			);
-      echo "Link update\r\n";
 
 			$cnDb->upsert(
 				CN_ENTRY_DATE_TABLE,
@@ -5136,16 +5123,12 @@ class cnEntry {
 					'id' => array( 'key' => 'id', 'format' => '%d' )
 				)
 			);
-      echo "Date update\r\n";
 
 			$this->updateObjectCaches();
-      echo "After caches\r\n";
 		}
 
 		do_action( 'cn_updated-entry', $this );
-    echo "After cn_update-entry ". ((FALSE !== $result) ? "true" : "false" ). " \r\n";
-    echo "After cn_update-entry ". ((FALSE == $result) ? "FALSE" : "TRUE" ). " \r\n";
-    echo "FALSE: " . FALSE;
+
 		return $result;
 	}
 
