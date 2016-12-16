@@ -114,53 +114,16 @@ class CN_REST_Entry_Controller extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 
-		if ( 'edit' === $request['context'] &&
-		     ( ! current_user_can( 'connections_edit_entry' ) || ! current_user_can( 'connections_edit_entry_moderated' ) )
-		) {
+		if ( ! is_user_logged_in() && cnOptions::loginRequired() ) {
 
 			return new WP_Error(
 				'rest_forbidden_context',
-				__( 'Sorry, you are not allowed to edit these entries.', 'connections' ),
+				__( 'Permission denied. Login required.', 'connections' ),
 				array( 'status' => rest_authorization_required_code() )
 			);
 		}
 
 		return TRUE;
-	}
-
-	/**
-	 * @param WP_REST_Request $request Full details about the request.
-	 *
-	 * @return array
-	 */
-	protected function get_entries( $request ) {
-
-		// Grab an instance of the Connections object.
-		$instance = Connections_Directory();
-
-		$atts = array(
-			'limit'  => $request['per_page'],
-			'offset' => $request['offset'],
-		);
-
-		$results = $instance->retrieve->entries( $atts );
-
-		return $results;
-	}
-
-	/**
-	 * @param WP_REST_Request $request Full details about the request.
-	 *
-	 * @return array
-	 */
-	protected function get_entry( $request ) {
-
-		// Grab an instance of the Connections object.
-		$instance = Connections_Directory();
-
-		$results = $instance->retrieve->entry( $request['id'] );
-
-		return $results;
 	}
 
 	/**
@@ -212,6 +175,111 @@ class CN_REST_Entry_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Checks if a given request has access to read an entry.
+	 *
+	 * @access public
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 *
+	 * @return bool|WP_Error True if the request has read access for the item, WP_Error object otherwise.
+	 */
+	public function get_item_permissions_check( $request ) {
+
+		if ( is_user_logged_in() ) {
+
+			/**
+			 * @todo
+			 *
+			 * $request['context'] can be one of: view, embed, edit
+			 * When user logged in, view context should be evaluated to ensure user has
+			 * read capabilities for the requested entry.
+			 */
+
+			if ( 'edit' === $request['context'] &&
+			     ( ! current_user_can( 'connections_edit_entry' ) || ! current_user_can( 'connections_edit_entry_moderated' ) )
+			) {
+
+				return new WP_Error(
+					'rest_forbidden_context',
+					__( 'Permission denied. Current user does not have required capability(ies) assigned.', 'connections' ),
+					array( 'status' => rest_authorization_required_code() )
+				);
+			}
+
+		} else {
+
+			if ( cnOptions::loginRequired() ) {
+
+				return new WP_Error(
+					'rest_forbidden_context',
+					__( 'Permission denied. Login required.', 'connections' ),
+					array( 'status' => rest_authorization_required_code() )
+				);
+			}
+		}
+
+		return TRUE;
+	}
+
+	/**
+	 * Retrieves a single entry.
+	 *
+	 * @access public
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 *
+	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
+	 */
+	public function get_item( $request ) {
+
+		$atts = array(
+			'id' => (int) $request['id'],
+		);
+
+		$result = $this->get_entries( $request, $atts );
+
+		if ( empty( $atts['id'] ) || empty( $result ) ) {
+			return new WP_Error( 'rest_entry_invalid_id', __( 'Invalid entry ID.', 'connections' ), array( 'status' => 404 ) );
+		}
+
+		$entry = new cnEntry( $result[0] );
+
+		$data     = $this->prepare_item_for_response( $entry, $request );
+		$response = rest_ensure_response( $data );
+
+		//if ( is_post_type_viewable( get_post_type_object( $post->post_type ) ) ) {
+		//	$response->link_header( 'alternate',  get_permalink( $id ), array( 'type' => 'text/html' ) );
+		//}
+
+		return $response;
+	}
+
+	/**
+	 * @param WP_REST_Request $request Full details about the request.
+	 *
+	 * @param array           $untrusted
+	 *
+	 * @return array
+	 */
+	protected function get_entries( $request, $untrusted = array() ) {
+
+		// Grab an instance of the Connections object.
+		$instance = Connections_Directory();
+
+		$defaults = array(
+			'id'     => NULL,
+			'limit'  => $request['per_page'],
+			'offset' => $request['offset'],
+		);
+
+		$atts = cnSanitize::args( $untrusted, $defaults );
+
+		$results = $instance->retrieve->entries( $atts );
+
+		return $results;
+	}
+
+	/**
 	 * Prepare a single entry output for response.
 	 *
 	 * @param cnEntry         $entry   Post object.
@@ -229,6 +297,11 @@ class CN_REST_Entry_Controller extends WP_REST_Controller {
 		//		'force_home' => $forceHome,
 		//	)
 		//);
+
+		/**
+		 * @todo `raw` should only be sent in the `edit` context to match WP core API endpoints.
+		 * @link https://github.com/WP-API/WP-API/issues/2948#issuecomment-265433906
+		 */
 
 		$data['id']   = $entry->getId();
 		$data['type'] = $entry->getEntryType();
@@ -326,9 +399,8 @@ class CN_REST_Entry_Controller extends WP_REST_Controller {
 	 */
 	private function prepare_address_for_response( $entry, $request, $data ) {
 
-		$data['addresses'] = array();
-		$rendered_addresses = $entry->getAddresses();
-		$raw_addresses      = $entry->getAddresses( array(), TRUE, FALSE, 'raw' );
+		$data['adr'] = array();
+		$addresses   = $entry->getAddresses( array(), TRUE, FALSE, 'raw' );
 
 		if ( empty( $rendered_addresses ) ) return $data;
 		if ( count( $rendered_addresses ) != count( $raw_addresses ) ) {
@@ -340,65 +412,56 @@ class CN_REST_Entry_Controller extends WP_REST_Controller {
 		for ($i = 0; $i < count($rendered_addresses); ++$i) {
 
 			$item = array(
-				'preferred'   => array(
-					'raw'      => $raw_addresses[$i]->preferred,
-					'rendered' => $rendered_addresses[$i]->preferred,
-				),
+				'id'               => $address->id,
+				'order'            => $address->order,
+				'preferred'        => $address->preferred,
+				'type'             => $address->type,
 				'street_address'   => array(
-					'raw'      => $raw_addresses[$i]->line_1,
-					'rendered' => $rendered_addresses[$i]->line_1,
+					'raw'      => $address->line_1,
+					'rendered' => cnSanitize::field( 'street', $address->line_1, 'display' ),
 				),
 				'extended_address' => array(
-					'raw'      => $raw_addresses[$i]->line_2,
-					'rendered' => $rendered_addresses[$i]->line_2,
+					'raw'      => $address->line_2,
+					'rendered' => cnSanitize::field( 'street', $address->line_2, 'display' ),
 				),
-				'street_address_3' => array(
-					'raw'      => $raw_addresses[$i]->line_3,
-					'rendered' => $rendered_addresses[$i]->line_3,
+				'extended_address_2' => array(
+					'raw'      => $address->line_3,
+					'rendered' => cnSanitize::field( 'street', $address->line_3, 'display' ),
 				),
-				'street_address_4' => array(
-					'raw'      => $raw_addresses[$i]->line_4,
-					'rendered' => $rendered_addresses[$i]->line_4,
+				'extended_address_3' => array(
+					'raw'      => $address->line_4,
+					'rendered' => cnSanitize::field( 'street', $address->line_4, 'display' ),
 				),
-				'locality'         => array(
-					'raw'      => $raw_addresses[$i]->city,
-					'rendered' => $rendered_addresses[$i]->city,
-				),
-				'city'       => array(
-					'raw'      => $raw_addresses[$i]->city,
-					'rendered' => $rendered_addresses[$i]->city,
-				),
-				'region'     => array(
-					'raw'      => $raw_addresses[$i]->state,
-					'rendered' => $rendered_addresses[$i]->state,
-				),
-				'state'      => array(
-					'raw'      => $raw_addresses[$i]->state,
-					'rendered' => $rendered_addresses[$i]->state,
-				),
-				'district'   => array(
-					'raw'      => $raw_addresses[$i]->county,
-					'rendered' => $rendered_addresses[$i]->county,
+				'district'         => array(
+					'raw'      => $address->district,
+					'rendered' => cnSanitize::field( 'district', $address->district, 'display' ),
 				),
 				'county'           => array(
-					'raw'      => $raw_addresses[$i]->county,
-					'rendered' => $rendered_addresses[$i]->county,
+					'raw'      => $address->county,
+					'rendered' => cnSanitize::field( 'county', $address->county, 'display' ),
+				),
+				'locality'         => array(
+					'raw'      => $address->city,
+					'rendered' => cnSanitize::field( 'locality', $address->city, 'display' ),
+				),
+				'region'           => array(
+					'raw'      => $address->state,
+					'rendered' => cnSanitize::field( 'region', $address->state, 'display' ),
 				),
 				'postal_code'      => array(
-					'raw'      => $raw_addresses[$i]->zipcode,
-					'rendered' => $rendered_addresses[$i]->zipcode,
+					'raw'      => $address->zipcode,
+					'rendered' => cnSanitize::field( 'postal-code', $address->zipcode, 'display' ),
 				),
 				'country_name'     => array(
-					'raw'      => $raw_addresses[$i]->country,
-					'rendered' => $rendered_addresses[$i]->country,
+					'raw'      => $address->country,
+					'rendered' => cnSanitize::field( 'country', $address->country, 'display' ),
 				),
-				'order'     => array(
-					'raw'      => $raw_addresses[$i]->order,
-					'rendered' => $rendered_addresses[$i]->order,
-				),
+				'latitude'         => $address->latitude,
+				'longitude'        => $address->longitude,
+				'visibility'       => $address->visibility,
 			);
 
-			$data['addresses'][] = $item;
+			$data['adr'][] = $item;
 		}
 
 		return $data;
